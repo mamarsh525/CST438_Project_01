@@ -12,11 +12,21 @@ import androidx.compose.ui.text.input.ImeAction // Added
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 
+import com.example.project01group03.data.UserDao
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
 @Composable
-fun LoginScreen(onLoginSuccess: () -> Unit = {}) { // Added a callback for navigation
+fun LoginScreen(
+    userDao: UserDao,
+    onLoginSuccess: () -> Unit = {}
+) { // Added a callback for navigation
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) } // State for validation
+
+    val scope = rememberCoroutineScope()
 
     Column(
         modifier = Modifier
@@ -79,8 +89,19 @@ fun LoginScreen(onLoginSuccess: () -> Unit = {}) { // Added a callback for navig
                 } else if (password.length < 6) {
                     errorMessage = "Password must be at least 6 characters"
                 } else {
-                    // SUCCESS
-                    onLoginSuccess()
+                    // database login check
+                    scope.launch {
+                        val user = withContext(Dispatchers.IO) {
+                            userDao.login(username, password)
+                        }
+
+                        if (user != null) {
+                            // SUCCESS
+                            onLoginSuccess()
+                        } else {
+                            errorMessage = "Invalid username or password"
+                        }
+                    }
                 }
             },
             modifier = Modifier.fillMaxWidth()

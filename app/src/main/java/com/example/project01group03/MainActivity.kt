@@ -11,11 +11,17 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.project01group03.ui.theme.Project01Group03Theme
+
+// database imports
+import com.example.project01group03.data.AppDatabase
+import com.example.project01group03.data.UserDao
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -25,6 +31,11 @@ class MainActivity : ComponentActivity() {
             Project01Group03Theme {
                 // 1. Initialize the NavController inside the Theme
                 val navController = rememberNavController()
+
+                // create database and dao
+                val context = LocalContext.current
+                val database = remember { AppDatabase.getDatabase(context) }
+                val userDao: UserDao = database.userDao()
 
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     Surface(
@@ -36,12 +47,15 @@ class MainActivity : ComponentActivity() {
                         NavHost(navController = navController, startDestination = "login") {
 
                             composable("login") {
-                                LoginScreen(onLoginSuccess = {
-                                    // Navigate to home and clear login from history
-                                    navController.navigate("home") {
-                                        popUpTo("login") { inclusive = true }
+                                LoginScreen(
+                                    userDao = userDao,
+                                    onLoginSuccess = {
+                                        // Navigate to home and clear login from history
+                                        navController.navigate("home") {
+                                            popUpTo("login") { inclusive = true }
+                                        }
                                     }
-                                })
+                                )
                             }
 
                             composable("home") {
