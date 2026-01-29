@@ -4,8 +4,12 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -59,7 +63,12 @@ class MainActivity : ComponentActivity() {
                             }
 
                             composable("home") {
-                                HomeScreen()
+                                HomeScreen(onLogout = {
+                                    // Navigate back to login
+                                    navController.navigate("login") {
+                                        popUpTo("home") { inclusive = true }
+                                    }
+                                })
                             }
                         }
                     }
@@ -68,7 +77,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
 // 3. ADD THIS FUNCTION AT THE BOTTOM (Outside the MainActivity class)
 // This fixes the "HomeScreen" error.
 @Composable
