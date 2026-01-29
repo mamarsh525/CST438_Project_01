@@ -4,14 +4,20 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -45,7 +51,12 @@ class MainActivity : ComponentActivity() {
                             }
 
                             composable("home") {
-                                HomeScreen()
+                                HomeScreen(onLogout = {
+                                    // Navigate back to login
+                                    navController.navigate("login") {
+                                        popUpTo("home") { inclusive = true }
+                                    }
+                                })
                             }
                         }
                     }
@@ -54,10 +65,19 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
 // 3. ADD THIS FUNCTION AT THE BOTTOM (Outside the MainActivity class)
 // This fixes the "HomeScreen" error.
 @Composable
-fun HomeScreen() {
-    Text(text = "Welcome to the Home Screen!")
+fun HomeScreen(onLogout: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center
+    ) {
+        Text(text = "Welcome to the Home Screen!")
+        Spacer(modifier = Modifier.height(16.dp))
+        Button(onClick = onLogout) {
+            Text(text = "Logout")
+        }
+    }
 }
