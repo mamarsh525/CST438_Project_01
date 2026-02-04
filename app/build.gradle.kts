@@ -1,3 +1,5 @@
+
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -66,6 +68,10 @@ dependencies {
     //added for navigation
     implementation("androidx.navigation:navigation-compose:2.7.7")
     implementation("androidx.navigation:navigation-compose:2.8.5")
+    //used for discog api
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.gson)
+
 
     // Room
     val room_version = "2.6.1"
