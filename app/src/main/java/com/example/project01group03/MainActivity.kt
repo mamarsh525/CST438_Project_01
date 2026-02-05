@@ -4,24 +4,40 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.project01group03.ui.theme.Project01Group03Theme
-
-// database imports
 import com.example.project01group03.data.AppDatabase
 import com.example.project01group03.data.UserDao
+import com.example.project01group03.ui.theme.Project01Group03Theme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -29,42 +45,67 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             Project01Group03Theme {
-                // 1. Initialize the NavController inside the Theme
-                val navController = rememberNavController()
-
-                // create database and dao
                 val context = LocalContext.current
-                val database = remember { AppDatabase.getDatabase(context) }
-                val userDao: UserDao = database.userDao()
+                var database by remember { mutableStateOf<AppDatabase?>(null) }
 
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Surface(
-                        modifier = Modifier.padding(innerPadding),
-                        color = MaterialTheme.colorScheme.background
+                // Use LaunchedEffect to initialize the database off the main thread
+                LaunchedEffect(Unit) {
+                    database = withContext(Dispatchers.IO) {
+                        AppDatabase.getDatabase(context)
+                    }
+                }
+
+                // Show a loading indicator while the database is being created
+                if (database == null) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
                     ) {
-                        // 2. The NavHost is the ONLY thing that should be here.
-                        // It decides whether to show LoginScreen or HomeScreen.
-                        NavHost(navController = navController, startDestination = "login") {
+                        CircularProgressIndicator()
+                    }
+                } else {
+                    // Once the database is ready, get the dao and show the NavHost
+                    val userDao = remember { database!!.userDao() }
 
-                            composable("login") {
-                                LoginScreen(
-                                    userDao = userDao,
-                                    onLoginSuccess = {
-                                        // Navigate to home and clear login from history
-                                        navController.navigate("home") {
-                                            popUpTo("login") { inclusive = true }
+                    val navController = rememberNavController()
+                    val snackbarHostState = remember { SnackbarHostState() }
+                    val scope = rememberCoroutineScope()
+
+                    Scaffold(
+                        modifier = Modifier.fillMaxSize(),
+                        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+                    ) { innerPadding ->
+                        Surface(
+                            modifier = Modifier.padding(innerPadding),
+                            color = MaterialTheme.colorScheme.background
+                        ) {
+                            NavHost(navController = navController, startDestination = "login") {
+
+                                composable("login") {
+                                    LoginScreen(
+                                        userDao = userDao,
+                                        onLoginSuccess = {
+                                            // Navigate to home and clear login from history
+                                            navController.navigate("home") {
+                                                popUpTo("login") { inclusive = true }
+                                            }
+                                        },
+                                        onCreateAccountSuccess = {
+                                            scope.launch {
+                                                snackbarHostState.showSnackbar("Account created successfully!")
+                                            }
                                         }
-                                    }
-                                )
-                            }
+                                    )
+                                }
 
-                            composable("home") {
-                                HomeScreen(onLogout = {
-                                    // Navigate back to login
-                                    navController.navigate("login") {
-                                        popUpTo("home") { inclusive = true }
-                                    }
-                                })
+                                composable("home") {
+                                    HomeScreen(onLogout = {
+                                        // Navigate back to login
+                                        navController.navigate("login") {
+                                            popUpTo("home") { inclusive = true }
+                                        }
+                                    })
+                                }
                             }
                         }
                     }
@@ -73,9 +114,14 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-// 3. ADD THIS FUNCTION AT THE BOTTOM (Outside the MainActivity class)
-// This fixes the "HomeScreen" error.
+
 @Composable
 fun HomeScreen(onLogout: () -> Unit) {
-    Text(text = "Welcome to the Home Screen!")
+    Column(modifier = Modifier.padding(16.dp)) {
+        Text(text = "Welcome to the Home Screen!")
+        Spacer(modifier = Modifier.height(16.dp))
+        Button(onClick = onLogout) {
+            Text("Logout")
+        }
+    }
 }

@@ -12,6 +12,7 @@ import androidx.compose.ui.text.input.ImeAction // Added
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 
+import com.example.project01group03.data.User
 import com.example.project01group03.data.UserDao
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -20,7 +21,8 @@ import kotlinx.coroutines.withContext
 @Composable
 fun LoginScreen(
     userDao: UserDao,
-    onLoginSuccess: () -> Unit = {}
+    onLoginSuccess: () -> Unit = {},
+    onCreateAccountSuccess: () -> Unit = {}
 ) { // Added a callback for navigation
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -36,7 +38,7 @@ fun LoginScreen(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Welcome Back",
+            text = "Vinyl Vault",
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(bottom = 32.dp)
         )
@@ -81,32 +83,56 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Button(
-            onClick = {
-                // VALIDATION LOGIC
-                if (username.isEmpty() || password.isEmpty()) {
-                    errorMessage = "Please fill in all fields"
-                } else if (password.length < 6) {
-                    errorMessage = "Password must be at least 6 characters"
-                } else {
-                    // database login check
-                    scope.launch {
-                        val user = withContext(Dispatchers.IO) {
-                            userDao.login(username, password)
-                        }
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+            Button(
+                onClick = {
+                    // VALIDATION LOGIC
+                    if (username.isEmpty() || password.isEmpty()) {
+                        errorMessage = "Please fill in all fields"
+                    } else {
+                        // database login check
+                        scope.launch {
+                            val user = withContext(Dispatchers.IO) {
+                                userDao.login(username, password)
+                            }
 
-                        if (user != null) {
-                            // SUCCESS
-                            onLoginSuccess()
-                        } else {
-                            errorMessage = "Invalid username or password"
+                            if (user != null) {
+                                // SUCCESS
+                                onLoginSuccess()
+                            } else {
+                                errorMessage = "Invalid username or password"
+                            }
+                        }
+                    }
+                },
+            ) {
+                Text("Sign In")
+            }
+
+            Button(
+                onClick = {
+                    if (username.isEmpty() || password.isEmpty()) {
+                        errorMessage = "Please fill in all fields"
+                    } else {
+                        scope.launch {
+                            val existingUser = withContext(Dispatchers.IO) {
+                                userDao.getUserByUsername(username)
+                            }
+                            if (existingUser != null) {
+                                errorMessage = "Username already exists"
+                            } else {
+                                val newUser = User(username = username, password = password)
+                                withContext(Dispatchers.IO) {
+                                    userDao.insert(newUser)
+                                }
+                                onCreateAccountSuccess()
+                            }
                         }
                     }
                 }
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Login")
+            ) {
+                Text("Create Account")
+            }
         }
     }
 }
