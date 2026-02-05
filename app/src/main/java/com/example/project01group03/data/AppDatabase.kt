@@ -4,6 +4,9 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.sqlite.db.SupportSQLiteDatabase
+import java.util.concurrent.Executors
+import kotlinx.coroutines.runBlocking
 
 @Database(entities = [User::class], version = 1)
 abstract class AppDatabase : RoomDatabase() {
@@ -20,7 +23,26 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "app_database"
-                ).build()
+                )
+                    .addCallback(object : RoomDatabase.Callback() {
+                        override fun onCreate(db: SupportSQLiteDatabase) {
+                            super.onCreate(db)
+                            Executors.newSingleThreadExecutor().execute {
+                                INSTANCE?.let { database ->
+                                    runBlocking {
+                                        database.userDao().insertUser(
+                                            User(
+                                                username = "testuser",
+                                                password = "password123"
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    })
+                    .build()
+
                 INSTANCE = instance
                 instance
             }
