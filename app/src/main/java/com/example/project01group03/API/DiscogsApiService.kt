@@ -13,7 +13,7 @@ interface DiscogsApiService {
         @Header("User-Agent") userAgent: String = "cst438Project01Group03",
         //search query
         @Query("q") query: String,
-        //since im doing the random artist, have to set type to artist, so it only shows artits and not other data
+        //since im doing the random artist, have to set type to artist, so it only shows artists and not other data
         //can make it show the artists albums later for now just doing random artist
         @Query("type") type: String = "artist",
 
