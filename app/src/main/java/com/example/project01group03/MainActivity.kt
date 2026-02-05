@@ -116,13 +116,3 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@Composable
-fun HomeScreen(onLogout: () -> Unit) {
-    Column(modifier = Modifier.padding(16.dp)) {
-        Text(text = "Welcome to the Home Screen!")
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = onLogout) {
-            Text("Logout")
-        }
-    }
-}
