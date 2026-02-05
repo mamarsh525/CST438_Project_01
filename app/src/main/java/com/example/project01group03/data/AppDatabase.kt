@@ -30,7 +30,7 @@ abstract class AppDatabase : RoomDatabase() {
                             Executors.newSingleThreadExecutor().execute {
                                 INSTANCE?.let { database ->
                                     runBlocking {
-                                        database.userDao().insertUser(
+                                        database.userDao().insert(
                                             User(
                                                 username = "testuser",
                                                 password = "password123"
