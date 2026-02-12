@@ -4,14 +4,14 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import androidx.sqlite.db.SupportSQLiteDatabase
-import java.util.concurrent.Executors
-import kotlinx.coroutines.runBlocking
 
-@Database(entities = [User::class], version = 1)
+// Update the entities list to include the renamed UserCollectionItem and increment the version number.
+@Database(entities = [User::class, UserCollectionItem::class], version = 3)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun userDao(): UserDao
+    // Add an abstract function for the new, renamed DAO.
+    abstract fun userCollectionItemDao(): UserCollectionItemDao
 
     companion object {
         @Volatile
@@ -24,25 +24,9 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "app_database"
                 )
-                    .addCallback(object : RoomDatabase.Callback() {
-                        override fun onCreate(db: SupportSQLiteDatabase) {
-                            super.onCreate(db)
-                            Executors.newSingleThreadExecutor().execute {
-                                INSTANCE?.let { database ->
-                                    runBlocking {
-                                        database.userDao().insert(
-                                            User(
-                                                username = "testuser",
-                                                password = "password123"
-                                            )
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    })
+                    // This will wipe and rebuild the database on a version change.
+                    .fallbackToDestructiveMigration()
                     .build()
-
                 INSTANCE = instance
                 instance
             }

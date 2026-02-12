@@ -11,10 +11,11 @@ data class DiscogsSearchResponse(
 //parameters used on discogs documentation,
 //type for artist, title and id for artist
 data class SearchResult(
-    val id: Int,//id of artist
-    val title: String,//name of artist
-    val type: String,// when you search for a name, multiple different results can come up
-    //discogs uses type to filter for album, artist, label etc
+    @SerializedName("id") val id: Long,
+    @SerializedName("title") val title: String,
+    @SerializedName("thumb") val thumb: String, // URL for the thumbnail image
+    @SerializedName("year") val year: String?,
+    val type: String,
     @SerializedName("cover_image") val coverImage: String,
     @SerializedName("resource_url") val resourceUrl: String
 )
