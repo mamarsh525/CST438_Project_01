@@ -84,4 +84,7 @@ dependencies {
     testImplementation("androidx.test.ext:junit-ktx:1.1.5")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.1")
     testImplementation("androidx.room:room-testing:$room_version")
+
+    //images
+    implementation("io.coil-kt:coil-compose:2.6.0")
 }
