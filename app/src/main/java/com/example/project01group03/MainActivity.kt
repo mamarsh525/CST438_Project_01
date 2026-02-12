@@ -1,5 +1,5 @@
 package com.example.project01group03
-
+import com.example.project01group03.API.RetrofitClient
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -116,13 +116,3 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@Composable
-fun HomeScreen(onLogout: () -> Unit) {
-    Column(modifier = Modifier.padding(16.dp)) {
-        Text(text = "Welcome to the Home Screen!")
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = onLogout) {
-            Text("Logout")
-        }
-    }
-}
