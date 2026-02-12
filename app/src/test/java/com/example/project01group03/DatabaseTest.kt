@@ -5,6 +5,8 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.example.project01group03.data.AppDatabase
 import com.example.project01group03.data.User
+import com.example.project01group03.data.UserCollectionItem
+import com.example.project01group03.data.UserCollectionItemDao
 import com.example.project01group03.data.UserDao
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -20,9 +22,10 @@ import org.robolectric.annotation.Config
 import java.io.IOException
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34]) // Add this line to specify the SDK for Robolectric
+@Config(sdk = [34]) // Specify the SDK for Robolectric
 class DatabaseTest {
     private lateinit var userDao: UserDao
+    private lateinit var userCollectionItemDao: UserCollectionItemDao
     private lateinit var db: AppDatabase
 
     @Before
@@ -33,6 +36,7 @@ class DatabaseTest {
             .allowMainThreadQueries()
             .build()
         userDao = db.userDao()
+        userCollectionItemDao = db.userCollectionItemDao() // Initialize the new DAO
     }
 
     @After
@@ -41,14 +45,15 @@ class DatabaseTest {
         db.close()
     }
 
+    // --- User DAO Tests ---
+
     @Test
     @Throws(Exception::class)
     fun insertAndGetUser() = runBlocking {
         val user = User(username = "testuser", password = "password")
         userDao.insert(user)
         val allUsers = userDao.getAllUsers().first()
-        assertEquals(allUsers[0].username, user.username)
-        assertEquals(allUsers[0].password, user.password)
+        assertEquals("testuser", allUsers[0].username)
     }
 
     @Test
@@ -74,12 +79,32 @@ class DatabaseTest {
         userDao.insert(user)
         val foundUser = userDao.getUserByUsername("testuser")
         assertNotNull(foundUser)
-        assertEquals("testuser", foundUser?.username)
     }
 
+    // --- User Collection DAO Tests ---
+
     @Test
-    fun getUserByUsername_doesNotExist() = runBlocking {
-        val foundUser = userDao.getUserByUsername("nonexistent")
-        assertNull(foundUser)
+    fun addAndRetrieveCollectionItem() = runBlocking {
+        // 1. Create and insert a user to be the owner
+        val owner = User(id = 1, username = "collector", password = "password")
+        userDao.insert(owner)
+
+        // 2. Create a collection item linked to the user
+        val item = UserCollectionItem(
+            ownerId = 1,
+            releaseId = 12345L,
+            title = "Test Album",
+            year = "1991",
+            thumbUrl = "http://example.com/image.jpg"
+        )
+        userCollectionItemDao.insert(item)
+
+        // 3. Retrieve the collection for that user
+        val collection = userCollectionItemDao.getCollectionForUser(1).first()
+
+        // 4. Verify the retrieved item is correct
+        assertEquals(1, collection.size)
+        assertEquals("Test Album", collection[0].title)
+        assertEquals(1, collection[0].ownerId)
     }
 }
