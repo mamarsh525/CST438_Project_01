@@ -24,8 +24,23 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "app_database"
                 )
-                    // This will wipe and rebuild the database on a version change.
-                    .fallbackToDestructiveMigration()
+                    .addCallback(object : RoomDatabase.Callback() {
+                        override fun onCreate(db: SupportSQLiteDatabase) {
+                            super.onCreate(db)
+                            Executors.newSingleThreadExecutor().execute {
+                                INSTANCE?.let { database ->
+                                    runBlocking {
+                                        database.userDao().insert(
+                                            User(
+                                                username = "testuser",
+                                                password = "password123"
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    })
                     .build()
                 INSTANCE = instance
                 instance

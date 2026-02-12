@@ -9,7 +9,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction // Added
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 
 import com.example.project01group03.data.User
@@ -28,6 +30,8 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) } // State for validation
 
+    fun stripWhitespace(input: String): String = input.filterNot { it.isWhitespace() }
+
     val scope = rememberCoroutineScope()
 
     Column(
@@ -45,30 +49,42 @@ fun LoginScreen(
 
         OutlinedTextField(
             value = username,
-            onValueChange = {
-                username = it
+            onValueChange = { input ->
+                username = stripWhitespace(input)
                 errorMessage = null // Clear error when typing
             },
             label = { Text("Username") },
             isError = errorMessage != null, // Highlights red if error exists
             modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
+            singleLine = true,
+            maxLines = 1,
+            keyboardOptions = KeyboardOptions(
+                imeAction = ImeAction.Next,
+                keyboardType = KeyboardType.Ascii,
+                capitalization = KeyboardCapitalization.None,
+                autoCorrect = false
+            )
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
             value = password,
-            onValueChange = {
-                password = it
+            onValueChange = { input ->
+                password = stripWhitespace(input)
                 errorMessage = null
             },
             label = { Text("Password") },
             visualTransformation = PasswordVisualTransformation(),
             isError = errorMessage != null,
             modifier = Modifier.fillMaxWidth(),
-            // KEYBOARD OPTIONS: Makes the keyboard show "Done" instead of a new line
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+            singleLine = true,
+            maxLines = 1,
+            keyboardOptions = KeyboardOptions(
+                imeAction = ImeAction.Done,
+                keyboardType = KeyboardType.Password,
+                autoCorrect = false
+            )
         )
 
         // VALIDATION: Show error message if it exists
@@ -86,18 +102,20 @@ fun LoginScreen(
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
             Button(
                 onClick = {
-                    // VALIDATION LOGIC
-                    if (username.isEmpty() || password.isEmpty()) {
+                    val u = username.trim()
+                    val p = password.trim()
+
+                    if (u.isBlank() || p.isBlank()) {
                         errorMessage = "Please fill in all fields"
+                    } else if (u.any { it.isWhitespace() } || p.any { it.isWhitespace() }) {
+                        errorMessage = "Username and password cannot contain spaces, tabs, or new lines"
                     } else {
-                        // database login check
                         scope.launch {
                             val user = withContext(Dispatchers.IO) {
-                                userDao.login(username, password)
+                                userDao.login(u, p)
                             }
 
                             if (user != null) {
-                                // SUCCESS
                                 onLoginSuccess()
                             } else {
                                 errorMessage = "Invalid username or password"
@@ -111,17 +129,22 @@ fun LoginScreen(
 
             Button(
                 onClick = {
-                    if (username.isEmpty() || password.isEmpty()) {
+                    val u = username.trim()
+                    val p = password.trim()
+
+                    if (u.isBlank() || p.isBlank()) {
                         errorMessage = "Please fill in all fields"
+                    } else if (u.any { it.isWhitespace() } || p.any { it.isWhitespace() }) {
+                        errorMessage = "Username and password cannot contain spaces, tabs, or new lines"
                     } else {
                         scope.launch {
                             val existingUser = withContext(Dispatchers.IO) {
-                                userDao.getUserByUsername(username)
+                                userDao.getUserByUsername(u)
                             }
                             if (existingUser != null) {
                                 errorMessage = "Username already exists"
                             } else {
-                                val newUser = User(username = username, password = password)
+                                val newUser = User(username = u, password = p)
                                 withContext(Dispatchers.IO) {
                                     userDao.insert(newUser)
                                 }
