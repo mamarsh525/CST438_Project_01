@@ -6,9 +6,43 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+
+private fun Modifier.noTabOrEnter(): Modifier {
+    return this.onPreviewKeyEvent { event: KeyEvent ->
+        val blockedKey = (
+                event.key == Key.Tab ||
+                        event.k
+
+
+                        ey() == Key.Enter ||
+                        event.
+                        key == Key.NumPadEnter
+                )
+
+        event.ty
+        pe == KeyEventType.KeyDown && blockedKey
+    }
+}
+
+fun validateRegisterFields(username: String, password: String, confirmPassword: String): String? {
+    return when {
+        username.isBlank() || password.isBlank() || confirmPassword.isBlank() ->
+            "Please fill in all fields"
+        password.length < 6 ->
+            "Password must be at least 6 characters"
+        password != confirmPassword ->
+            "Passwords do not match"
+        else -> null
+    }
+}
 
 @Composable
 fun RegisterScreen(
@@ -16,21 +50,18 @@ fun RegisterScreen(
     onGoToLogin: () -> Unit = {}
 ) {
     var username by remember { mutableStateOf("") }
-
     var password by remember { mutableStateOf("") }
-
     var confirmPassword by remember { mutableStateOf("") }
-
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     Column(
-        modifier = Modifier.fillMaxSize() .padding(16.dp),
+        modifier = Modifier.fillMaxSize().padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-
         Text(
-            text = "Create Account",  style = MaterialTheme.typography.headlineMedium,
+            text = "Create Account",
+            style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(bottom = 32.dp)
         )
 
@@ -42,8 +73,9 @@ fun RegisterScreen(
             },
             label = { Text("Username") },
             isError = errorMessage != null,
-            modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
+            modifier = Modifier.fillMaxWidth().noTabOrEnter(),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.None)
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -57,9 +89,9 @@ fun RegisterScreen(
             label = { Text("Password") },
             visualTransformation = PasswordVisualTransformation(),
             isError = errorMessage != null,
-
-            modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
+            modifier = Modifier.fillMaxWidth().noTabOrEnter(),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.None)
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -73,8 +105,9 @@ fun RegisterScreen(
             label = { Text("Confirm Password") },
             visualTransformation = PasswordVisualTransformation(),
             isError = errorMessage != null,
-            modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+            modifier = Modifier.fillMaxWidth().noTabOrEnter(),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.None)
         )
 
         if (errorMessage != null) {
@@ -86,26 +119,17 @@ fun RegisterScreen(
             )
         }
 
-
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(
             onClick = {
-                if (username.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
-                    errorMessage = "Please fill in all fields"
-                } else if (password.length < 6) {
-                    errorMessage = "Password must be at least 6 characters"
-                } else if (password != confirmPassword) {
-                    errorMessage = "Passwords do not match"
-                } else {
-                    onRegisterSuccess()
-                }
+                val result = validateRegisterFields(username, password, confirmPassword)
+                if (result != null) errorMessage = result else onRegisterSuccess()
             },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Create Account")
         }
-
 
         Spacer(modifier = Modifier.height(12.dp))
 
