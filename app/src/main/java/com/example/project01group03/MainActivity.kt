@@ -22,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -48,7 +49,7 @@ class MainActivity : ComponentActivity() {
             Project01Group03Theme {
                 val context = LocalContext.current
                 var database by remember { mutableStateOf<AppDatabase?>(null) }
-
+                var loggedInUserId by remember { mutableIntStateOf(-1) }
                 // Use LaunchedEffect to initialize the database off the main thread
                 LaunchedEffect(Unit) {
                     database = withContext(Dispatchers.IO) {
@@ -85,7 +86,8 @@ class MainActivity : ComponentActivity() {
                                 composable("login") {
                                     LoginScreen(
                                         userDao = userDao,
-                                        onLoginSuccess = {
+                                        onLoginSuccess = { user ->
+                                            loggedInUserId = user.id
                                             // Navigate to home and clear login from history
                                             navController.navigate("home") {
                                                 popUpTo("login") { inclusive = true }
@@ -100,7 +102,9 @@ class MainActivity : ComponentActivity() {
                                 }
 
                                 composable("home") {
-                                    HomeScreen(onLogout = {
+                                    HomeScreen(userId = loggedInUserId,
+                                        favoriteDao = database!!.favoriteDao(),
+                                        onLogout = {
                                         // Navigate back to login
                                         navController.navigate("login") {
                                             popUpTo("home") { inclusive = true }

@@ -20,16 +20,18 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.project01group03.API.RetrofitClient
+import com.example.project01group03.data.FavoriteArtist
+import com.example.project01group03.data.FavoriteDao.FavoriteDao
 import kotlinx.coroutines.launch
 
 
 @Composable
-fun HomeScreen(onLogout: () -> Unit) {
+fun HomeScreen(userId: Int, favoriteDao: FavoriteDao, onLogout: () -> Unit) {
     //since searchArtist is a suspend function, it needs coroutine to run,
     //scope.launch allows button to start the coroutine
     //coeoutine scope runs network call in background to keep ui from freezing up
     val scope = rememberCoroutineScope()
-    //artist nameis what holds api call info and displays in on screen
+    //artist name is what holds api call info and displays in on screen
     //remember keeps the value from being reset
     //without it, it breakes :(
     var artistName by remember { mutableStateOf("No artist loaded") }
@@ -69,6 +71,22 @@ fun HomeScreen(onLogout: () -> Unit) {
             }
         }) {
             Text("Get Random Artist")
+        }
+        Button(onClick = {
+            scope.launch {
+                // Only save if we actually have an artist loaded
+                if (artistName != "No artist loaded" && artistName != "No artist found") {
+                    val favorite = FavoriteArtist(
+                        userId = userId,
+                        artistName = artistName,
+                        imageUrl = artistImageUrl
+                    )
+                    // Save to the database
+                    favoriteDao.insert(favorite)
+                }
+            }
+        }) {
+            Text("Favorite ️")
         }
 
         Spacer(modifier = Modifier.height(24.dp))

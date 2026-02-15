@@ -7,11 +7,13 @@ import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import java.util.concurrent.Executors
 import kotlinx.coroutines.runBlocking
+import com.example.project01group03.data.FavoriteDao.FavoriteDao
 
-@Database(entities = [User::class], version = 1)
+@Database(entities = [User::class, FavoriteArtist::class], version = 2, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun userDao(): UserDao
+    abstract fun favoriteDao(): FavoriteDao
 
     companion object {
         @Volatile
@@ -24,6 +26,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "app_database"
                 )
+                    .fallbackToDestructiveMigration()
                     .addCallback(object : RoomDatabase.Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)
