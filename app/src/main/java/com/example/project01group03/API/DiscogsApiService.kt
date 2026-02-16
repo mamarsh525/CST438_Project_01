@@ -2,6 +2,7 @@ package com.example.project01group03.API
 
 import retrofit2.http.GET
 import retrofit2.http.Header
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface DiscogsApiService {
@@ -22,7 +23,7 @@ interface DiscogsApiService {
 
         //Used to get a random result by picking a random page number and that shows random artist
         // discogs separates all the artists into pages, so each page is an artist, gonna eventually
-        //make a random page generator and thatll get us the random artist for the random activity
+        //make a random page generator and that'll get us the random artist for the random activity
         @Query("page") page: Int,
 
         // We only need 1 result to be shown for the random button
@@ -31,5 +32,17 @@ interface DiscogsApiService {
 
     ): DiscogsSearchResponse
 
+    @GET("artists/{artist_id}")
+    suspend fun getArtistDetails(
+        @Path("artist_id") artistId: Long,
+        @Query("token") token: String = "IrbQNfaSiELvXDWpqyjjmfooRkuPNUGLNtxfAIVi"
+    ): ArtistDetails
 
+    @GET("artists/{artist_id}/releases")
+    suspend fun getArtistReleases(
+        @Path("artist_id") artistId: Long,
+        @Query("token") token: String = "IrbQNfaSiELvXDWpqyjjmfooRkuPNUGLNtxfAIVi",
+        @Query("page") page: Int = 1,
+        @Query("per_page") perPage: Int = 100
+    ): ArtistReleasesResponse
 }

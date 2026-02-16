@@ -1,25 +1,18 @@
 package com.example.project01group03
-import com.example.project01group03.API.RetrofitClient
+
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,12 +22,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.project01group03.data.AppDatabase
-import com.example.project01group03.data.UserDao
 import com.example.project01group03.ui.theme.Project01Group03Theme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -49,14 +42,12 @@ class MainActivity : ComponentActivity() {
                 val context = LocalContext.current
                 var database by remember { mutableStateOf<AppDatabase?>(null) }
 
-                // Use LaunchedEffect to initialize the database off the main thread
                 LaunchedEffect(Unit) {
                     database = withContext(Dispatchers.IO) {
                         AppDatabase.getDatabase(context)
                     }
                 }
 
-                // Show a loading indicator while the database is being created
                 if (database == null) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -65,12 +56,14 @@ class MainActivity : ComponentActivity() {
                         CircularProgressIndicator()
                     }
                 } else {
-                    // Once the database is ready, get the dao and show the NavHost
                     val userDao = remember { database!!.userDao() }
-
+                    val collectionDao = remember { database!!.userCollectionItemDao() }
                     val navController = rememberNavController()
                     val snackbarHostState = remember { SnackbarHostState() }
                     val scope = rememberCoroutineScope()
+
+                    // Store logged-in user ID
+                    var currentUserId by remember { mutableStateOf<Int?>(null) }
 
                     Scaffold(
                         modifier = Modifier.fillMaxSize(),
@@ -81,12 +74,11 @@ class MainActivity : ComponentActivity() {
                             color = MaterialTheme.colorScheme.background
                         ) {
                             NavHost(navController = navController, startDestination = "login") {
-
                                 composable("login") {
                                     LoginScreen(
                                         userDao = userDao,
-                                        onLoginSuccess = {
-                                            // Navigate to home and clear login from history
+                                        onLoginSuccess = { userId ->
+                                            currentUserId = userId
                                             navController.navigate("home") {
                                                 popUpTo("login") { inclusive = true }
                                             }
@@ -100,12 +92,50 @@ class MainActivity : ComponentActivity() {
                                 }
 
                                 composable("home") {
-                                    HomeScreen(onLogout = {
-                                        // Navigate back to login
-                                        navController.navigate("login") {
-                                            popUpTo("home") { inclusive = true }
+                                    HomeScreen(
+                                        onLogout = {
+                                            currentUserId = null
+                                            navController.navigate("login") {
+                                                popUpTo("home") { inclusive = true }
+                                            }
+                                        },
+                                        onArtistSearch = { artistId, artistName ->
+                                            navController.navigate("artist/$artistId/$artistName")
+                                        },
+                                        onNavigateToCollection = {
+                                            navController.navigate("collection")
                                         }
-                                    })
+                                    )
+                                }
+
+                                composable("collection") {
+                                    CollectionScreen(
+                                        userId = currentUserId ?: 0,
+                                        collectionDao = collectionDao,
+                                        onBackToHome = {
+                                            navController.popBackStack()
+                                        }
+                                    )
+                                }
+
+                                composable(
+                                    "artist/{artistId}/{artistName}",
+                                    arguments = listOf(
+                                        navArgument("artistId") { type = NavType.LongType },
+                                        navArgument("artistName") { type = NavType.StringType }
+                                    )
+                                ) { backStackEntry ->
+                                    val artistId = backStackEntry.arguments?.getLong("artistId") ?: 0L
+                                    val artistName = backStackEntry.arguments?.getString("artistName") ?: ""
+                                    ArtistScreen(
+                                        artistId = artistId,
+                                        artistName = artistName,
+                                        userId = currentUserId ?: 0,
+                                        collectionDao = collectionDao,
+                                        onBackToHome = {
+                                            navController.popBackStack()
+                                        }
+                                    )
                                 }
                             }
                         }
@@ -115,4 +145,3 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-

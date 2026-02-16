@@ -23,7 +23,7 @@ import kotlinx.coroutines.withContext
 @Composable
 fun LoginScreen(
     userDao: UserDao,
-    onLoginSuccess: () -> Unit = {},
+    onLoginSuccess: (userId: Int) -> Unit = {},
     onCreateAccountSuccess: () -> Unit = {}
 ) { // Added a callback for navigation
     var username by remember { mutableStateOf("") }
@@ -116,7 +116,7 @@ fun LoginScreen(
                             }
 
                             if (user != null) {
-                                onLoginSuccess()
+                                onLoginSuccess(user.id)
                             } else {
                                 errorMessage = "Invalid username or password"
                             }

@@ -6,30 +6,28 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 // Update the entities list to include the renamed UserCollectionItem and increment the version number.
-@Database(entities = [User::class, UserCollectionItem::class], version = 3)
+@Database(
+    entities = [User::class, UserCollectionItem::class],
+    version = 2
+)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun userDao(): UserDao
-    // Add an abstract function for the new, renamed DAO.
     abstract fun userCollectionItemDao(): UserCollectionItemDao
 
     companion object {
-        @Volatile
-        private var INSTANCE: AppDatabase? = null
+        @Volatile private var INSTANCE: AppDatabase? = null
 
-        fun getDatabase(context: Context): AppDatabase {
-            return INSTANCE ?: synchronized(this) {
-                val instance = Room.databaseBuilder(
+        fun getDatabase(context: Context): AppDatabase =
+            INSTANCE ?: synchronized(this) {
+                Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
                     "app_database"
                 )
-                    // This will wipe and rebuild the database on a version change.
                     .fallbackToDestructiveMigration()
                     .build()
-                INSTANCE = instance
-                instance
+                    .also { INSTANCE = it }
             }
-        }
     }
 }
