@@ -18,6 +18,8 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Delete
+
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -30,6 +32,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -41,6 +44,8 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.project01group03.data.UserCollectionItem
 import com.example.project01group03.data.UserCollectionItemDao
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,6 +56,7 @@ fun CollectionScreen(
     onNavigateToStats: () -> Unit
 ) {
     val collectionItems by collectionDao.getCollectionForUser(userId).collectAsState(initial = emptyList())
+    val scope = rememberCoroutineScope() // Added coroutine scope for delete
 
     Scaffold(
         topBar = {
@@ -111,7 +117,14 @@ fun CollectionScreen(
                     .padding(paddingValues)
             ) {
                 items(collectionItems) { item ->
-                    CollectionItemCard(item = item)
+                    CollectionItemCard(
+                        item = item,
+                        onRemove = {
+                            scope.launch(Dispatchers.IO) {
+                                collectionDao.deleteByReleaseId(userId, item.releaseId)
+                            }
+                        }
+                    )
                 }
             }
         }
@@ -119,102 +132,124 @@ fun CollectionScreen(
 }
 
 @Composable
-fun CollectionItemCard(item: UserCollectionItem) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier.fillMaxWidth()
+fun CollectionItemCard(
+    item: UserCollectionItem,
+    onRemove: (() -> Unit)? = null
+) {
+    Box { // Wrapped in Box to allow overlay icon
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
-            // Album cover
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1f)
+            Column(
+                modifier = Modifier.fillMaxWidth()
             ) {
-                if (!item.thumbUrl.isNullOrBlank()) {
-                    AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data(item.thumbUrl)
-                            .crossfade(true)
-                            .build(),
-                        contentDescription = "Album cover for ${item.title}",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                } else {
-                    // Placeholder when no image
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "No Image",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                // Album cover
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(1f)
+                ) {
+                    if (!item.thumbUrl.isNullOrBlank()) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(item.thumbUrl)
+                                .crossfade(true)
+                                .build(),
+                            contentDescription = "Album cover for ${item.title}",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
                         )
+                    } else {
+                        // Placeholder when no image
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(16.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "No Image",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+
+                // Album info
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp)
+                ) {
+                    // Artist name
+                    Text(
+                        text = item.artistName,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    // Album title
+                    Text(
+                        text = item.title,
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    // Year and format
+                    Row {
+                        item.year?.let { year ->
+                            Text(
+                                text = year.toString(),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        if (item.year != null && item.format != null) {
+                            Text(
+                                text = " • ",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        item.format?.let { format ->
+                            Text(
+                                text = format,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
                 }
             }
+        }
 
-            // Album info
-            Column(
+        // Delete icon overlay (top right corner)
+        if (onRemove != null) {
+            IconButton(
+                onClick = onRemove,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp)
+                    .align(Alignment.TopEnd)
+                    .padding(6.dp)
             ) {
-                // Artist name
-                Text(
-                    text = item.artistName,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Remove from collection",
+                    tint = MaterialTheme.colorScheme.error
                 )
-
-                Spacer(modifier = Modifier.height(2.dp))
-
-                // Album title
-                Text(
-                    text = item.title,
-                    style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                Spacer(modifier = Modifier.height(2.dp))
-
-                // Year and format
-                Row {
-                    item.year?.let { year ->
-                        Text(
-                            text = year.toString(),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    if (item.year != null && item.format != null) {
-                        Text(
-                            text = " • ",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    item.format?.let { format ->
-                        Text(
-                            text = format,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                }
             }
         }
     }
