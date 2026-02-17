@@ -91,12 +91,10 @@ fun RegisterScreen(
 
         Button(
             onClick = {
-                if (username.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
-                    errorMessage = "Please fill in all fields"
-                } else if (password.length < 6) {
-                    errorMessage = "Password must be at least 6 characters"
-                } else if (password != confirmPassword) {
-                    errorMessage = "Passwords do not match"
+                val error = validateRegisterFields(username, password, confirmPassword)
+
+                if (error != null) {
+                    errorMessage = error
                 } else {
                     onRegisterSuccess()
                 }
