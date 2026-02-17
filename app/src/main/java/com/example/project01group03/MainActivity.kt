@@ -114,7 +114,17 @@ class MainActivity : ComponentActivity() {
                                         collectionDao = collectionDao,
                                         onBackToHome = {
                                             navController.popBackStack()
+                                        },
+                                        onNavigateToStats = {
+                                            navController.navigate("stats")
                                         }
+                                    )
+                                }
+
+                                composable("stats") {
+                                    StatsScreen(
+                                        userId = currentUserId ?: 0,
+                                        collectionDao = collectionDao
                                     )
                                 }
 
