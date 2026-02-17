@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -46,7 +47,8 @@ import com.example.project01group03.data.UserCollectionItemDao
 fun CollectionScreen(
     userId: Int,
     collectionDao: UserCollectionItemDao,
-    onBackToHome: () -> Unit
+    onBackToHome: () -> Unit,
+    onNavigateToStats: () -> Unit
 ) {
     val collectionItems by collectionDao.getCollectionForUser(userId).collectAsState(initial = emptyList())
 
@@ -59,6 +61,14 @@ fun CollectionScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back to Home"
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onNavigateToStats) {
+                        Icon(
+                            imageVector = Icons.Default.Star,
+                            contentDescription = "View Stats"
                         )
                     }
                 }
